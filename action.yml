@@ -1,0 +1,53 @@
+name: lockscan
+description: Scan lockfiles for known vulnerabilities (OSV.dev) and upload the results to GitHub code scanning.
+branding:
+  icon: shield
+  color: red
+inputs:
+  path:
+    description: Directory or lockfile to scan
+    default: "."
+  fail-on:
+    description: Fail the job if any finding is at or above this severity (low, medium, high, critical, none)
+    default: high
+  ignore:
+    description: Comma-separated advisory IDs or aliases to ignore
+    default: ""
+  upload-sarif:
+    description: "Upload a SARIF report to code scanning (needs security-events: write)"
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: ${{ github.action_path }}/go.mod
+        cache: false
+    - name: Build lockscan
+      shell: bash
+      run: cd "$GITHUB_ACTION_PATH" && go build -o "$RUNNER_TEMP/lockscan" ./cmd/lockscan
+    - name: Scan
+      id: scan
+      shell: bash
+      env:
+        LS_PATH: ${{ inputs.path }}
+        LS_FAIL_ON: ${{ inputs.fail-on }}
+        LS_IGNORE: ${{ inputs.ignore }}
+      run: |
+        set +e
+        "$RUNNER_TEMP/lockscan" --fail-on none --ignore "$LS_IGNORE" --format sarif --output "$RUNNER_TEMP/lockscan.sarif" "$LS_PATH"
+        [ $? -eq 2 ] && exit 2
+        "$RUNNER_TEMP/lockscan" --fail-on "$LS_FAIL_ON" --ignore "$LS_IGNORE" "$LS_PATH" | tee -a "$GITHUB_STEP_SUMMARY"
+        echo "code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+    - name: Upload SARIF
+      if: ${{ inputs.upload-sarif == 'true' && !cancelled() }}
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: ${{ runner.temp }}/lockscan.sarif
+        category: lockscan
+    - name: Enforce fail-on
+      if: ${{ steps.scan.outputs.code != '0' }}
+      shell: bash
+      run: |
+        echo "::error::lockscan found vulnerabilities at or above '${{ inputs.fail-on }}'"
+        exit 1

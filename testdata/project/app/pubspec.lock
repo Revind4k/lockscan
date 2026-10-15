@@ -1,0 +1,13 @@
+packages:
+  http:
+    dependency: "direct main"
+    source: hosted
+    version: "1.2.0"
+  flutter:
+    dependency: "direct main"
+    source: sdk
+    version: "0.0.0"
+  local_pkg:
+    dependency: "direct main"
+    source: path
+    version: "0.1.0"

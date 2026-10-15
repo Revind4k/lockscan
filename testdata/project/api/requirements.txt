@@ -1,0 +1,5 @@
+# pinned
+requests==2.31.0
+uvicorn[standard]==0.29.0 ; python_version >= "3.10"
+numpy>=1.26
+-r other.txt
