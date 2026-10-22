@@ -14,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Package is one resolved dependency. Ecosystem uses OSV's names (npm, PyPI, Pub, Go, Maven, SwiftURL).
+// Package is one resolved dependency. Ecosystem uses OSV's names (npm, PyPI, Pub, Go, Maven, SwiftURL, crates.io).
 type Package struct {
 	Name      string `json:"name"`
 	Version   string `json:"version"`
@@ -33,6 +33,7 @@ var Parsers = map[string]parser{
 	"go.mod":            goMod,
 	"gradle.lockfile":   gradleLock,
 	"Package.resolved":  swiftResolved,
+	"Cargo.lock":        cargoLock,
 }
 
 // skipDirs are never descended into: vendored or generated trees whose lockfiles are not the project's own.
@@ -131,6 +132,30 @@ func uvLock(path string) ([]Package, error) {
 			continue
 		}
 		out = append(out, Package{Name: p.Name, Version: p.Version, Ecosystem: "PyPI"})
+	}
+	return out, nil
+}
+
+// Cargo.lock (v3/v4): only crates.io packages are checked. Workspace members have no source,
+// and git or alternate-registry crates aren't in OSV's crates.io data under the same name.
+func cargoLock(path string) ([]Package, error) {
+	var lock struct {
+		Package []struct {
+			Name    string `toml:"name"`
+			Version string `toml:"version"`
+			Source  string `toml:"source"`
+		} `toml:"package"`
+	}
+	if _, err := toml.DecodeFile(path, &lock); err != nil {
+		return nil, err
+	}
+	var out []Package
+	for _, p := range lock.Package {
+		if !strings.HasPrefix(p.Source, "registry+https://github.com/rust-lang/crates.io-index") &&
+			p.Source != "sparse+https://index.crates.io/" {
+			continue
+		}
+		out = append(out, Package{Name: p.Name, Version: p.Version, Ecosystem: "crates.io"})
 	}
 	return out, nil
 }

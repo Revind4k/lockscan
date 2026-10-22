@@ -28,6 +28,7 @@ That's a real scan of one of my own projects. The three critical Tomcat issues w
 | `go.mod` | Go | |
 | `gradle.lockfile` | Maven | enable with `dependencyLocking { lockAllConfigurations() }` |
 | `Package.resolved` | SwiftPM | |
+| `Cargo.lock` (v3/v4) | crates.io | workspace members and git crates are skipped |
 
 Directories are searched recursively, skipping `node_modules`, `.venv`, `vendor`, `build` and similar.
 
@@ -63,7 +64,7 @@ Findings appear under the repository's Security → Code scanning tab, each loca
 ## How it works
 
 ```
-parse (7 formats) → dedupe → POST /v1/querybatch ──→ IDs per package
+parse (8 formats) → dedupe → POST /v1/querybatch ──→ IDs per package
                                (≤1000 per request,      │
                                 follows page tokens)     ▼
                      GET /v1/vulns/{id}  ← worker pool (8), disk cache keyed by id + modified

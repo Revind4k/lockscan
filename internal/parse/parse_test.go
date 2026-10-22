@@ -19,7 +19,7 @@ func TestDiscoverSkipsVendoredTrees(t *testing.T) {
 		r, _ := filepath.Rel(fixtures, p)
 		rel = append(rel, r)
 	}
-	want := "android/gradle.lockfile api/requirements.txt api/uv.lock app/pubspec.lock ios/Package.resolved svc/go.mod web/package-lock.json"
+	want := "android/gradle.lockfile api/requirements.txt api/uv.lock app/pubspec.lock ios/Package.resolved rs/Cargo.lock svc/go.mod web/package-lock.json"
 	if strings.Join(rel, " ") != want {
 		t.Errorf("Discover =\n  %s\nwant\n  %s", strings.Join(rel, " "), want)
 	}
@@ -41,6 +41,12 @@ func TestParsers(t *testing.T) {
 		{"svc/go.mod", []string{"Go github.com/gin-gonic/gin 1.9.0", "Go golang.org/x/net 0.17.0", "Go golang.org/x/text 0.13.0"}},
 		{"android/gradle.lockfile", []string{"Maven com.fasterxml.jackson.core:jackson-databind 2.15.0", "Maven org.yaml:snakeyaml 1.33"}},
 		{"ios/Package.resolved", []string{"SwiftURL github.com/Alamofire/Alamofire 5.8.0"}},
+		{"rs/Cargo.lock", []string{
+			"crates.io serde 1.0.150",
+			"crates.io smallvec 1.6.0",
+			"crates.io time 0.1.43",
+			"crates.io time 0.3.36", // two semver-incompatible versions of one crate are both locked
+		}},
 	}
 	for _, c := range cases {
 		t.Run(c.file, func(t *testing.T) {
@@ -65,7 +71,7 @@ func TestParsers(t *testing.T) {
 }
 
 func TestUnsupportedFile(t *testing.T) {
-	if _, err := File("Cargo.lock"); err == nil {
+	if _, err := File("yarn.lock"); err == nil {
 		t.Error("expected an error for an unsupported lockfile")
 	}
 }
