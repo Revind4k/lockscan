@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -22,6 +23,27 @@ func TestDiscoverSkipsVendoredTrees(t *testing.T) {
 	want := "android/gradle.lockfile api/requirements.txt api/uv.lock app/pubspec.lock ios/Package.resolved rs/Cargo.lock svc/go.mod web/package-lock.json"
 	if strings.Join(rel, " ") != want {
 		t.Errorf("Discover =\n  %s\nwant\n  %s", strings.Join(rel, " "), want)
+	}
+}
+
+func TestDiscoverSkipsTestdataUnlessItIsTheRoot(t *testing.T) {
+	root := t.TempDir()
+	for _, f := range []string{"go.mod", "testdata/fixture/package-lock.json"} {
+		p := filepath.Join(root, f)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, nil, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, _ := Discover(root)
+	if len(got) != 1 || filepath.Base(got[0]) != "go.mod" {
+		t.Errorf("Discover(project) = %v, want only go.mod", got)
+	}
+	got, _ = Discover(filepath.Join(root, "testdata"))
+	if len(got) != 1 || filepath.Base(got[0]) != "package-lock.json" {
+		t.Errorf("Discover(testdata) = %v, want the fixture when testdata is the root", got)
 	}
 }
 

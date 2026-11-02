@@ -30,7 +30,7 @@ That's a real scan of one of my own projects. The three critical Tomcat issues w
 | `Package.resolved` | SwiftPM | |
 | `Cargo.lock` (v3/v4) | crates.io | workspace members and git crates are skipped |
 
-Directories are searched recursively, skipping `node_modules`, `.venv`, `vendor`, `build` and similar.
+Directories are searched recursively, skipping `node_modules`, `.venv`, `vendor`, `build` and similar, plus `testdata` (where fixture lockfiles pin old versions on purpose). Pass a skipped directory explicitly to scan it anyway.
 
 ## Usage
 

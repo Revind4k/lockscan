@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"time"
 
@@ -168,7 +169,13 @@ next:
 	return out
 }
 
+// supported lists the lockfile names lockscan understands, taken from the parser table so a
+// newly added format can't be missing from the message (Cargo.lock was, until this was derived).
 func supported() string {
-	names := []string{"package-lock.json", "uv.lock", "requirements.txt", "pubspec.lock", "go.mod", "gradle.lockfile", "Package.resolved"}
+	names := make([]string, 0, len(parse.Parsers))
+	for name := range parse.Parsers {
+		names = append(names, name)
+	}
+	sort.Strings(names)
 	return strings.Join(names, ", ")
 }

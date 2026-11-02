@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/Revind4k/lockscan/internal/osv"
+	"github.com/Revind4k/lockscan/internal/parse"
 )
 
 // fakeAPI reports one critical lodash advisory and one medium minimist advisory.
@@ -163,6 +164,15 @@ func TestUsageErrors(t *testing.T) {
 	} {
 		if code, _, _ := lockscan(t, args...); code != 2 {
 			t.Errorf("lockscan %v: exit %d, want 2", args, code)
+		}
+	}
+}
+
+func TestNoLockfilesMessageListsEveryFormat(t *testing.T) {
+	_, _, errOut := lockscan(t, t.TempDir())
+	for name := range parse.Parsers {
+		if !strings.Contains(errOut, name) {
+			t.Errorf("message %q does not mention %s", errOut, name)
 		}
 	}
 }

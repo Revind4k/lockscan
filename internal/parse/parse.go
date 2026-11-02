@@ -36,8 +36,10 @@ var Parsers = map[string]parser{
 	"Cargo.lock":        cargoLock,
 }
 
-// skipDirs are never descended into: vendored or generated trees whose lockfiles are not the project's own.
-var skipDirs = map[string]bool{"node_modules": true, ".git": true, ".venv": true, "build": true, ".build": true, "vendor": true, ".dart_tool": true}
+// skipDirs are never descended into: vendored or generated trees whose lockfiles are not the project's own,
+// and testdata, where Go projects (lockscan included) keep deliberately outdated fixture lockfiles.
+// A skipped directory is still scanned when it is passed as the root.
+var skipDirs = map[string]bool{"node_modules": true, ".git": true, ".venv": true, "build": true, ".build": true, "vendor": true, ".dart_tool": true, "testdata": true}
 
 // Discover walks root and returns every supported lockfile, sorted.
 func Discover(root string) ([]string, error) {
